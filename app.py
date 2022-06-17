@@ -3,11 +3,14 @@ from http import HTTPStatus
 
 from flask_restful import Api
 
+from resources.recipe import RecipeListResources
+
 app = Flask(__name__)
 
-API = Api(app)
+api = Api(app)
 
-
+# 경로와 resource(API 코드)를 연결한다.
+api.add_resource(RecipeListResources, '/recipes')
 
 if __name__ == '__main__' :
     app.run()
