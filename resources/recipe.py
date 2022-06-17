@@ -10,7 +10,7 @@ import mysql.connector
 # 클래스는 상속이 가능하다.
 # API를 만들기 위한 클래스는 flask_restful 라이브러리의 Resource 클래스를 상속해서 만들어야 한다.
 
-class RecipeListResources(Resource):
+class RecipeListResource(Resource):
     # restful api의 method에 해당하는 함수 작성 (실행이 되는 프레임워크 콜백함수)
     def post(self):
         # api 실행코드를 작성
@@ -83,8 +83,8 @@ class RecipeListResources(Resource):
 
             i = 0
             for record in result_list:
-                result_list[i]['created_at'] = result_list[i]['created_at'].isoformat()
-                result_list[i]['updated_at'] = result_list[i]['updated_at'].isoformat()
+                result_list[i]['created_at'] = record['created_at'].isoformat()
+                result_list[i]['updated_at'] = record['updated_at'].isoformat()
                 i = i + 1
 
             cursor.close()
