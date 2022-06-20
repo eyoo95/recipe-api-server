@@ -1,5 +1,7 @@
-from flask import Config, Flask, jsonify, request
+from flask import Flask, jsonify, request
+from config import Config
 from http import HTTPStatus
+from flask_jwt_extended import JWTManager
 from flask_restful import Api
 from resources.recipe import RecipeListResource
 from resources.recipe_info import RecipeResource
@@ -13,6 +15,7 @@ app = Flask(__name__)
 app.config.from_object(Config)
 
 # JWT 토큰 라이브러리 만들기
+jwt = JWTManager(app)
 
 
 api = Api(app)

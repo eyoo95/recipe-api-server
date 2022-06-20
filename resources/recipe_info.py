@@ -1,6 +1,7 @@
 from ast import Delete
 from http import HTTPStatus
 from flask import request
+from flask_jwt_extended import get_jwt_identity, jwt_required
 from flask_restful import Resource
 from mysql.connector.errors import Error
 from mysql_connection import get_connection
@@ -55,30 +56,63 @@ class RecipeResource(Resource):
                 'info' : result_list[0]} ,200
 
     # 데이터를 업데이트하는 API는 PUT 함수를 사용한다.
-    def put(self,recipe_id):
+    @jwt_required()
+    def put(self, recipe_id) :
 
         # body에서 전달된 데이터를 처리
         data = request.get_json()
-        
-        # DB 업데이트 실행코드
+
+        user_id = get_jwt_identity()
+
+        # 디비 업데이트 실행코드
         try :
-            # 데이터 update 
+            # 데이터 업데이트 
             # 1. DB에 연결
             connection = get_connection()
 
+            ### 먼저 recipe_id 에 들어있는 user_id가
+            ### 이 사람인지 먼저 확인한다.
+
+            query = '''select user_id 
+                        from recipe
+                        where id = %s;'''
+            record = (recipe_id, )
+           
+            cursor = connection.cursor(dictionary = True)
+
+            cursor.execute(query, record)
+
+            result_list = cursor.fetchall()
+
+            if len(result_list) == 0 :
+                cursor.close()
+                connection.close()
+                return {'error' : '레시피 아이디가 잘못되었습니다.'}, 400
+
+            recipe = result_list[0]
+
+            if recipe['user_id'] != user_id :
+                cursor.close()
+                connection.close()
+                return {'error' : '남의 레시피를 수정할수 없습니다.'}, 401
+
+
             # 2. 쿼리문 만들기
             query = '''update recipe
-                        set name = %s, description = %s, cook_time= %s, directions= %s
-                        where id = %s;'''
-
-            record = (data['name'], data['description'], data['cook_time'], data['directions'], recipe_id ) # 튜플형식
-
+                    set name = %s , description = %s , 
+                    cook_time = %s , 
+                    directions = %s
+                    where id = %s ;'''
+            
+            record = (data['name'], data['description'],
+                        data['cook_time'], data['directions'],
+                        recipe_id )
 
             # 3. 커서를 가져온다.
             cursor = connection.cursor()
 
             # 4. 쿼리문을 커서를 이용해서 실행한다.
-            cursor.execute(query, record )
+            cursor.execute(query, record)
 
             # 5. 커넥션을 커밋해줘야 한다 => 디비에 영구적으로 반영하라는 뜻
             connection.commit()
@@ -91,10 +125,9 @@ class RecipeResource(Resource):
             print(e)
             cursor.close()
             connection.close()
-            return {'error':str(e)}, 503
+            return {'error' : str(e)}, 503
 
-
-        return {'result':'success'},200
+        return {'result' :'success'}, 200
 
     # 삭제하는 delete함수
     def delete(self,recipe_id ):
