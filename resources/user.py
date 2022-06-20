@@ -5,7 +5,7 @@ from mysql.connector.errors import Error
 from mysql_connection import get_connection
 import mysql.connector
 from email_validator import validate_email, EmailNotValidError
-from utills import hash_password
+from utils import hash_password, check_password
 
 
 class UserRegisterResource(Resource):
@@ -67,7 +67,65 @@ class UserRegisterResource(Resource):
 
         return {"result":"success" , "user_id" : user_id}, 200
 
+class UserLoginResource(Resource):
+    def post(self):
+        # 클라이언트로부터 body로 넘어온 데이터를 받는다.
+        data = request.get_json()
+
+        # {
+        #     "email": "abc@naver.com",
+        #     "password": "123456"
+        # }
+        try:
+            connection = get_connection()
+            # 이메일로 DB의 데이터를 가져온다.
+            query = '''select * from user
+                        where email = %s;'''
+
+            record = (data['email'],  )
+
+            cursor = connection.cursor(dictionary = True)  # 데이터를 셀렉할때 키벨류로 가져온다.
+
+            cursor.execute(query, record )
+
+            # select문은 아래 함수를 이용해서 데이터를 가져온다.
+            result_list = cursor.fetchall()
+
+            print(result_list)
+            
+            # 중요! DB 에서 가져온 timestamp는 파이썬의 datetime으로 자동 변경된다.
+            # 문제는 이 데이터를 json.으로 바로 보낼수 없으므로 문자열로 바꿔서 다시 저장해서 보낸다.
+
+            i = 0
+            for record in result_list:
+                result_list[i]['created_at'] = record['created_at'].isoformat()
+                result_list[i]['updated_at'] = record['updated_at'].isoformat()
+                i = i + 1
+
+            
+
+            cursor.close()
+            connection.close()
+
+        except mysql.connector.Error as e :
+            print(e)
+            cursor.close()
+            connection.close()
+            return {"error":str(e)}, 503
+
+        # result_list의 행의갯수가 1개면 유저데이터를 받아온것이고 0 이면 등록되지 않은 회원
+        if len(result_list) != 1:
+            return {'error':'해당되는 이메일 정보가 없습니다.'}, 400
+
+        # 비밀번호가 맞는지 확인
+        user_info = result_list[0]
+        check = check_password(data['password'],user_info['password'])
+        if check == False:
+            return {'error':'비밀번호가 맞지 않습니다.'}, 400
+        
+        return {'result' : 'success' ,'user_id':user_info['id']} ,200
+
+        
 
 
 
-        return

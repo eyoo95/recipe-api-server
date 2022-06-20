@@ -10,7 +10,7 @@ def hash_password(original_password) :
 
 # 비밀번호가 맞는지 확인하는 함수, True / False로 리턴한다.
 
-def check_password(original_password, hashed_password):
+def check_password(original_password, hashed_password) :
     salt = 'yh*hello12'
-    check = pbkdf2_sha256.verify(original_password+salt,hashed_password)
+    check = pbkdf2_sha256.verify(original_password+salt, hashed_password)
     return check
