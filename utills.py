@@ -1,5 +1,6 @@
 from passlib.hash import pbkdf2_sha256
 
+
 # 원문 비밀번호를 암호화 하는 함수 (암호화만 하되 복호화는 하지않는것이 해쉬다.)
 def hash_password(original_password) :
     salt = 'yh*hello12'
